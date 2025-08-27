@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./packages/nextjs/public/Mandala.png" alt="Mandala Chain Logo" width="100" height="100">
+  <img src="./packages/nextjs/public/Mandala.png" alt="Mandala Chain Logo" width="500" height="400">
 </div>
 
 # Mandala Chain Web3 Development Toolkit
