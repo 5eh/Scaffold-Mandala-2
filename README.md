@@ -1,80 +1,278 @@
-# 🏗 Scaffold-ETH 2
+<div align="center">
+  <img src="./packages/nextjs/public/Mandala.png" alt="Mandala Chain Logo" width="100" height="100">
+</div>
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+# Mandala Chain Web3 Development Toolkit
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+A comprehensive Web3 application development framework for Mandala Chain, a Polkadot parachain with EVM compatibility. This toolkit enables rapid deployment and testing of decentralized applications on Mandala's infrastructure.
 
-⚙️ Built using NextJS, RainbowKit, Hardhat, Wagmi, Viem, and Typescript.
+## Overview
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+Mandala Chain is a PolkadotVM-based parachain that provides full EVM compatibility, allowing developers to deploy Ethereum-style smart contracts while benefiting from Polkadot's interoperability and security. This development toolkit provides everything needed to build, test, and deploy applications on the Mandala network.
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+## Features
 
-## Requirements
+- **EVM Compatible Smart Contracts**: Deploy Solidity contracts on Mandala Chain
+- **RPC Integration**: Direct blockchain connection via HTTPS endpoints
+- **Interactive Development Environment**: Built-in contract debugging and testing tools
+- **Testnet Ready**: Pre-configured for Mandala testnet deployment
+- **Type-Safe Development**: Full TypeScript support throughout the stack
 
-Before you begin, you need to install the following tools:
+## Quick Start
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+### Prerequisites
 
-## Quickstart
+- Node.js 18+ or 20+ (avoid Node.js 23+ due to Hardhat compatibility issues)
+- Yarn package manager
+- Git
 
-To get started with Scaffold-ETH 2, follow the steps below:
+### Installation
 
-1. Install dependencies if it was skipped in CLI:
+Follow these steps to set up your development environment:
 
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/5eh/Scaffold-Mandala-2
+cd Scaffold-Mandala-2
 ```
-cd my-dapp-example
+
+#### 2. Install Dependencies
+
+```bash
 yarn install
 ```
 
-2. Run a local network in the first terminal:
+#### 3. Install Hardhat Dependencies
 
-```
-yarn chain
-```
-
-This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/hardhat/hardhat.config.ts`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
+```bash
+cd packages/hardhat
+yarn install
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/hardhat/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/hardhat/deploy` to deploy the contract to the network. You can also customize the deploy script.
+#### 4. Install Next.js Dependencies
 
-4. On a third terminal, start your NextJS app:
+```bash
+cd packages/nextjs
+yarn install
+```
+
+#### 5. Start the Frontend Development Server
+
+```bash
+# From packages/nextjs directory
+yarn dev
+```
+
+The application will be available at `http://localhost:3000`
+
+#### 6. Deploy Smart Contracts to Mandala Testnet
+
+```bash
+# From packages/hardhat directory
+yarn deploy --network mandala
+```
+
+## Network Configuration
+
+### Testnet (Current Default)
+
+The toolkit is pre-configured for Mandala testnet:
+
+- **Network**: Mandala Paseo Testnet
+- **Chain ID**: 4818
+- **Currency**: KPGT (18 decimals)
+- **RPC Endpoint**: `https://rpc2.paseo.mandalachain.io`
+- **Block Explorer**: `https://explorer.paseo.mandalachain.io`
+
+### RPC Connection
+
+The framework uses HTTPS requests to connect to Mandala's RPC endpoints:
+
+```javascript
+// Primary RPC endpoint
+const RPC_URL = "https://rpc2.paseo.mandalachain.io";
+
+// Alternative endpoints for redundancy
+const BACKUP_RPC_URLS = [
+  "https://rpc1.paseo.mandalachain.io",
+  "https://rpc.paseo.mandalachain.io"
+];
+```
+
+### Mainnet Deployment
+
+**Important**: This toolkit is currently configured for testnet only. When ready for production deployment to Mandala mainnet, update the RPC endpoints and network configuration in your environment files.
+
+For mainnet deployment, you will need to:
+1. Update RPC URLs to mainnet endpoints
+2. Configure mainnet chain ID and currency settings
+3. Use production-grade private key management
+4. Verify all contracts before deployment
+
+## Architecture
+
+### Directory Structure
 
 ```
-yarn start
+packages/
+├── hardhat/              # Smart contract development
+│   ├── contracts/        # Solidity contracts
+│   ├── deploy/          # Deployment scripts
+│   ├── test/            # Contract tests
+│   └── hardhat.config.js # Network configuration
+├── nextjs/              # Frontend application
+│   ├── app/             # Next.js app router
+│   │   └── api/rpc/     # RPC proxy endpoint
+│   ├── components/      # React components
+│   └── contracts/       # Generated contract types
+└── docs/               # Documentation
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+### Key Components
 
-Run smart contract test with `yarn hardhat:test`
+**RPC Proxy**: Built-in proxy server handles CORS issues and provides reliable blockchain connectivity.
 
-- Edit your smart contracts in `packages/hardhat/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/hardhat/deploy`
+**Contract Debugging**: Interactive interface at `/debug` for testing deployed contracts.
+
+**Block Explorer**: Local blockchain explorer at `/blockexplorer` for transaction monitoring.
+
+## Development Workflow
+
+### 1. Smart Contract Development
+
+Create your contracts in `packages/hardhat/contracts/`:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+contract MyDApp {
+    string public name = "My Mandala DApp";
+    mapping(address => uint256) public balances;
+
+    function deposit() public payable {
+        balances[msg.sender] += msg.value;
+    }
+}
+```
+
+### 2. Testing
+
+```bash
+cd packages/hardhat
+yarn test
+```
+
+### 3. Deployment
+
+```bash
+yarn deploy --network mandala
+yarn generate  # Generate TypeScript types
+```
+
+### 4. Frontend Integration
+
+The frontend automatically detects deployed contracts and generates interaction interfaces.
+
+## Environment Setup
+
+Create `.env` file in `packages/hardhat/`:
+
+!!! Before manually importing your private key, you can do `yarn generate` and import your key, to then encrypt it automagically !!!
 
 
-## Documentation
+```bash
+# Deployment private key
+DEPLOYER_PRIVATE_KEY=0x1234567890abcdef...
 
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
+# Optional: Custom RPC endpoint
+RPC_URL=https://rpc2.paseo.mandalachain.io
 
-To know more about its features, check out our [website](https://scaffoldeth.io).
+# WalletConnect project ID (optional)
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id
+```
 
-## Contributing to Scaffold-ETH 2
+**Security Note**: Never commit private keys to version control. Use environment variables and keep `.env` files in `.gitignore`.
 
-We welcome contributions to Scaffold-ETH 2!
+## Troubleshooting
 
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+### Common Issues
+
+**CORS Errors**: The built-in RPC proxy automatically handles CORS issues with Mandala's endpoints.
+
+**Transaction Failures**: Mandala chain includes circuit breaker protections. If transactions fail, try reducing gas limits or waiting before retrying.
+
+**Contract Not Found**: After deployment, run `yarn generate` to update contract types, then restart the frontend.
+
+**Node.js Compatibility**: Use Node.js versions 18 or 20. Newer versions may cause Hardhat compatibility issues.
+
+### Network Connectivity
+
+Test your connection to Mandala testnet:
+
+```bash
+curl -X POST https://rpc2.paseo.mandalachain.io \
+  -H "Content-Type: application/json" \
+  -d '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+```
+
+## API Reference
+
+### RPC Endpoints
+
+All RPC calls are proxied through the Next.js API route for CORS handling:
+
+```javascript
+// Frontend usage
+const response = await fetch('/api/rpc', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    method: 'eth_getBalance',
+    params: [address, 'latest'],
+    id: 1,
+    jsonrpc: '2.0'
+  })
+});
+```
+
+### Explorer API Integration
+
+Direct integration with Mandala's explorer API:
+
+```bash
+# Get account information
+curl https://explorer.paseo.mandalachain.io/api/v2/addresses/{address}
+
+# Get contract details
+curl https://explorer.paseo.mandalachain.io/api/v2/smart-contracts/{address}
+```
+
+## Contributing
+
+This toolkit is actively maintained and welcomes contributions:
+
+- Bug fixes and improvements
+- Additional contract templates
+- Enhanced UI components
+- Documentation updates
+- Network optimization features
+
+## Resources
+
+- [Mandala Chain Documentation](https://docs.mandalachain.io)
+- [Polkadot Documentation](https://docs.polkadot.network)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Support
+
+For issues and questions:
+1. Check the troubleshooting section above
+2. Review Mandala Chain documentation
+3. Open an issue in this repository

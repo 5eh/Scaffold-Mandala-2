@@ -1,9 +1,9 @@
 "use client";
 
-import { Address, formatEther } from "viem";
+import { useEffect, useState } from "react";
+import { Address } from "viem";
 import { useDisplayUsdMode } from "~~/hooks/scaffold-eth/useDisplayUsdMode";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { useWatchBalance } from "~~/hooks/scaffold-eth/useWatchBalance";
 import { useGlobalState } from "~~/services/store/store";
 
 type BalanceProps = {
@@ -12,23 +12,63 @@ type BalanceProps = {
   usdMode?: boolean;
 };
 
+interface ApiResponse {
+  coin_balance: string;
+  // Add other fields if needed
+}
+
 /**
- * Display (ETH & USD) balance of an ETH address.
+ * Display (ETH & USD) balance of an ETH address using Mandala Chain explorer API.
  */
 export const Balance = ({ address, className = "", usdMode }: BalanceProps) => {
   const { targetNetwork } = useTargetNetwork();
   const nativeCurrencyPrice = useGlobalState(state => state.nativeCurrency.price);
   const isNativeCurrencyPriceFetching = useGlobalState(state => state.nativeCurrency.isFetching);
 
-  const {
-    data: balance,
-    isError,
-    isLoading,
-  } = useWatchBalance({
-    address,
-  });
+  const [balance, setBalance] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const { displayUsdMode, toggleDisplayUsdMode } = useDisplayUsdMode({ defaultUsdMode: usdMode });
+
+  useEffect(() => {
+    if (!address) return;
+
+    const fetchBalance = async () => {
+      setIsLoading(true);
+      setIsError(false);
+
+      try {
+        const response = await fetch(`https://explorer.paseo.mandalachain.io/api/v2/addresses/${address}`, {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: ApiResponse = await response.json();
+
+        // Convert the coin_balance string to a number
+        // The API returns balance in wei (string), so we need to convert it
+        const balanceInWei = BigInt(data.coin_balance);
+        const balanceInEther = Number(balanceInWei) / Math.pow(10, 18);
+
+        setBalance(balanceInEther);
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+        setIsError(true);
+        setBalance(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBalance();
+  }, [address]);
 
   if (!address || isLoading || balance === null || (isNativeCurrencyPriceFetching && nativeCurrencyPrice === 0)) {
     return (
@@ -49,8 +89,6 @@ export const Balance = ({ address, className = "", usdMode }: BalanceProps) => {
     );
   }
 
-  const formattedBalance = balance ? Number(formatEther(balance.value)) : 0;
-
   return (
     <button
       className={`btn btn-sm btn-ghost flex flex-col font-normal items-center hover:bg-transparent ${className}`}
@@ -61,11 +99,11 @@ export const Balance = ({ address, className = "", usdMode }: BalanceProps) => {
         {displayUsdMode ? (
           <>
             <span className="text-[0.8em] font-bold mr-1">$</span>
-            <span>{(formattedBalance * nativeCurrencyPrice).toFixed(2)}</span>
+            <span>{(balance * nativeCurrencyPrice).toFixed(2)}</span>
           </>
         ) : (
           <>
-            <span>{formattedBalance.toFixed(4)}</span>
+            <span>{balance.toFixed(4)}</span>
             <span className="text-[0.8em] font-bold ml-1">{targetNetwork.nativeCurrency.symbol}</span>
           </>
         )}

@@ -1,4 +1,54 @@
+import { defineChain } from "viem";
 import * as chains from "viem/chains";
+
+export const mandala = defineChain({
+  id: 4818,
+  name: "Mandala Paseo",
+  network: "Mandala",
+  nativeCurrency: {
+    name: "Mandala",
+    symbol: "KPGT",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ["http://localhost:3000/api/RPC"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Explore Mandala",
+      url: "https://explorer.paseo.mandalachain.io/",
+      apiUrl: "https://explorer.paseo.mandalachain.io/api",
+    },
+  },
+  testnet: true,
+});
+
+// export const mandala = /*#__PURE__*/ defineChain({
+//   id: 4818,
+//   name: "Mandala Paseo",
+//   network: "Mandala",
+//   nativeCurrency: {
+//     name: "Mandala",
+//     symbol: "KPGT",
+//     decimals: 18,
+//   },
+//   rpcUrls: {
+//     default: {
+//       http: ["https://rpc2.paseo.mandalachain.io"],
+//       // webSocket: ["wss://rpc2.paseo.mandalachain.io"],
+//     },
+//   },
+//   blockExplorers: {
+//     default: {
+//       name: "Explore Mandala",
+//       url: "https://explorer.paseo.mandalachain.io/",
+//       apiUrl: "https://explorer.paseo.mandalachain.io//api",
+//     },
+//   },
+//   testnet: true,
+// });
 
 export type BaseConfig = {
   targetNetworks: readonly chains.Chain[];
@@ -15,13 +65,8 @@ export const DEFAULT_ALCHEMY_API_KEY = "oKxs-03sij-U_N0iOlrSsZFr29-IqbuF";
 
 const scaffoldConfig = {
   // The networks on which your DApp is live
-  targetNetworks: [chains.hardhat],
-  // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
+  targetNetworks: [mandala],
   pollingInterval: 30000,
-  // This is ours Alchemy's default API key.
-  // You can get your own at https://dashboard.alchemyapi.io
-  // It's recommended to store it in an env variable:
-  // .env.local for local testing, and in the Vercel/system env config for live apps.
   alchemyApiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || DEFAULT_ALCHEMY_API_KEY,
   // If you want to use a different RPC for a specific network, you can add it here.
   // The key is the chain ID, and the value is the HTTP RPC URL

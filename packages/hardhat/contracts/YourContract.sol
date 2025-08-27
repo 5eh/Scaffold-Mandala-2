@@ -1,78 +1,244 @@
-//SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
-// Useful for debugging. Remove when deploying to a live network.
-import "hardhat/console.sol";
-
-// Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)
-// import "@openzeppelin/contracts/access/Ownable.sol";
-
-/**
- * A smart contract that allows changing a state variable of the contract and tracking the changes
- * It also allows the owner to withdraw the Ether in the contract
- * @author BuidlGuidl
- */
 contract YourContract {
-    // State Variables
     address public immutable owner;
-    string public greeting = "Building Unstoppable Apps!!!";
-    bool public premium = false;
-    uint256 public totalCounter = 0;
-    mapping(address => uint) public userGreetingCounter;
 
-    // Events: a way to emit log statements from smart contract that can be listened to by external parties
-    event GreetingChange(address indexed greetingSetter, string newGreeting, bool premium, uint256 value);
+    // Basic state variables
+    string public greeting = "Hello, Mandala Chain!";
+    uint256 public counter = 0;
+    bool public isActive = true;
 
-    // Constructor: Called once on contract deployment
-    // Check packages/hardhat/deploy/00_deploy_your_contract.ts
+    // Advanced state variables
+    mapping(address => uint256) public userBalances;
+    mapping(address => string) public userNames;
+    mapping(uint256 => Task) public tasks;
+
+    address[] public registeredUsers;
+    uint256[] public completedTaskIds;
+
+    uint256 public nextTaskId = 1;
+    uint256 public totalRewards = 0;
+
+    // Structs
+    struct Task {
+        uint256 id;
+        string description;
+        uint256 reward;
+        address assignee;
+        bool completed;
+        uint256 createdAt;
+    }
+
+    struct UserProfile {
+        string name;
+        uint256 balance;
+        uint256 tasksCompleted;
+        bool isRegistered;
+    }
+
+    // Events
+    event GreetingChanged(address indexed changer, string newGreeting);
+    event UserRegistered(address indexed user, string name);
+    event TaskCreated(uint256 indexed taskId, string description, uint256 reward);
+    event TaskCompleted(uint256 indexed taskId, address indexed completer);
+    event RewardClaimed(address indexed user, uint256 amount);
+    event FundsDeposited(address indexed depositor, uint256 amount);
+
+    // Modifiers
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier onlyActive() {
+        require(isActive, "Contract is not active");
+        _;
+    }
+
+    modifier onlyRegistered() {
+        require(bytes(userNames[msg.sender]).length > 0, "User not registered");
+        _;
+    }
+
     constructor(address _owner) {
         owner = _owner;
     }
 
-    // Modifier: used to define a set of rules that must be met before or after a function is executed
-    // Check the withdraw() function
-    modifier isOwner() {
-        // msg.sender: predefined variable that represents address of the account that called the current function
-        require(msg.sender == owner, "Not the Owner");
-        _;
+    // READ FUNCTIONS
+
+    function getGreeting() public view returns (string memory) {
+        return greeting;
     }
 
-    /**
-     * Function that allows anyone to change the state variable "greeting" of the contract and increase the counters
-     *
-     * @param _newGreeting (string memory) - new greeting to save on the contract
-     */
-    function setGreeting(string memory _newGreeting) public payable {
-        // Print data to the hardhat chain console. Remove when deploying to a live network.
-        console.log("Setting new greeting '%s' from %s", _newGreeting, msg.sender);
+    function getCounter() public view returns (uint256) {
+        return counter;
+    }
 
-        // Change state variables
+    function getContractBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function getUserProfile(address user) public view returns (UserProfile memory) {
+        return UserProfile({
+            name: userNames[user],
+            balance: userBalances[user],
+            tasksCompleted: getCompletedTasksCount(user),
+            isRegistered: bytes(userNames[user]).length > 0
+        });
+    }
+
+    function getTask(uint256 taskId) public view returns (Task memory) {
+        return tasks[taskId];
+    }
+
+    function getAllRegisteredUsers() public view returns (address[] memory) {
+        return registeredUsers;
+    }
+
+    function getCompletedTasks() public view returns (uint256[] memory) {
+        return completedTaskIds;
+    }
+
+    function getCompletedTasksCount(address user) public view returns (uint256) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < completedTaskIds.length; i++) {
+            if (tasks[completedTaskIds[i]].assignee == user) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    function isUserRegistered(address user) public view returns (bool) {
+        return bytes(userNames[user]).length > 0;
+    }
+
+    function getActiveTasksCount() public view returns (uint256) {
+        uint256 count = 0;
+        for (uint256 i = 1; i < nextTaskId; i++) {
+            if (!tasks[i].completed) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // WRITE FUNCTIONS
+
+    function setGreeting(string memory _newGreeting) public payable onlyActive {
+        require(bytes(_newGreeting).length > 0, "Greeting cannot be empty");
         greeting = _newGreeting;
-        totalCounter += 1;
-        userGreetingCounter[msg.sender] += 1;
+        counter++;
 
-        // msg.value: built-in global variable that represents the amount of ether sent with the transaction
+        // Optional: reward the caller with any sent value
         if (msg.value > 0) {
-            premium = true;
-        } else {
-            premium = false;
+            userBalances[msg.sender] += msg.value;
         }
 
-        // emit: keyword used to trigger an event
-        emit GreetingChange(msg.sender, _newGreeting, msg.value > 0, msg.value);
+        emit GreetingChanged(msg.sender, _newGreeting);
     }
 
-    /**
-     * Function that allows the owner to withdraw all the Ether in the contract
-     * The function can only be called by the owner of the contract as defined by the isOwner modifier
-     */
-    function withdraw() public isOwner {
-        (bool success, ) = owner.call{ value: address(this).balance }("");
-        require(success, "Failed to send Ether");
+    function registerUser(string memory _name) public {
+        require(bytes(_name).length > 0, "Name cannot be empty");
+        require(!isUserRegistered(msg.sender), "User already registered");
+
+        userNames[msg.sender] = _name;
+        registeredUsers.push(msg.sender);
+
+        emit UserRegistered(msg.sender, _name);
     }
 
-    /**
-     * Function that allows the contract to receive ETH
-     */
-    receive() external payable {}
+    function createTask(string memory _description, uint256 _reward) public payable onlyRegistered {
+        require(bytes(_description).length > 0, "Description cannot be empty");
+        require(_reward > 0, "Reward must be greater than 0");
+        require(msg.value >= _reward, "Must send enough value to cover reward");
+
+        uint256 taskId = nextTaskId++;
+        tasks[taskId] = Task({
+            id: taskId,
+            description: _description,
+            reward: _reward,
+            assignee: address(0),
+            completed: false,
+            createdAt: block.timestamp
+        });
+
+        totalRewards += _reward;
+
+        emit TaskCreated(taskId, _description, _reward);
+    }
+
+    function assignTask(uint256 _taskId, address _assignee) public onlyOwner {
+        require(_taskId < nextTaskId, "Task does not exist");
+        require(!tasks[_taskId].completed, "Task already completed");
+        require(isUserRegistered(_assignee), "Assignee not registered");
+
+        tasks[_taskId].assignee = _assignee;
+    }
+
+    function completeTask(uint256 _taskId) public onlyRegistered {
+        require(_taskId < nextTaskId, "Task does not exist");
+        require(tasks[_taskId].assignee == msg.sender, "Not assigned to you");
+        require(!tasks[_taskId].completed, "Task already completed");
+
+        tasks[_taskId].completed = true;
+        completedTaskIds.push(_taskId);
+
+        // Reward the completer
+        userBalances[msg.sender] += tasks[_taskId].reward;
+
+        emit TaskCompleted(_taskId, msg.sender);
+    }
+
+    function claimReward() public onlyRegistered {
+        uint256 balance = userBalances[msg.sender];
+        require(balance > 0, "No rewards to claim");
+        require(address(this).balance >= balance, "Contract insufficient balance");
+
+        userBalances[msg.sender] = 0;
+        payable(msg.sender).transfer(balance);
+
+        emit RewardClaimed(msg.sender, balance);
+    }
+
+    function incrementCounter() public {
+        counter++;
+    }
+
+    function resetCounter() public onlyOwner {
+        counter = 0;
+    }
+
+    function toggleActive() public onlyOwner {
+        isActive = !isActive;
+    }
+
+    function updateUserName(string memory _newName) public onlyRegistered {
+        require(bytes(_newName).length > 0, "Name cannot be empty");
+        userNames[msg.sender] = _newName;
+    }
+
+    function depositFunds() public payable {
+        require(msg.value > 0, "Must send some value");
+        emit FundsDeposited(msg.sender, msg.value);
+    }
+
+    // Emergency functions
+    function emergencyWithdraw() public onlyOwner {
+        payable(owner).transfer(address(this).balance);
+    }
+
+    function emergencyPause() public onlyOwner {
+        isActive = false;
+    }
+
+    // Receive function to accept direct transfers
+    receive() external payable {
+        emit FundsDeposited(msg.sender, msg.value);
+    }
+
+    fallback() external payable {
+        emit FundsDeposited(msg.sender, msg.value);
+    }
 }
